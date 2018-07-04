@@ -1,0 +1,27 @@
+{
+  "name": "Google Analytics Real Time Alert",
+  "description": "Google Analytics Real Time Alert notifies when there's a new day maximum or an all time maximum.",
+  "version": "0.1",
+  "permissions": [
+    "activeTab",
+    "notifications",
+    "storage"
+  ],
+  "content_scripts": [
+  {
+      "matches": ["https://analytics.google.com/*"],
+      "js": ["main.js"],
+      "all_frames": true,
+      "run_at": "document_end"
+  }
+  ],
+  "browser_action": {
+    "default_title": "Check Google Analytics Real Time",
+    "default_icon": "icon.png"
+  },
+  "web_accessible_resources": ["ding.m4a", "alert.png"],
+  "icons": { "16": "icon_16.png",
+           "48": "icon_48.png",
+          "128": "icon_128.png" },
+  "manifest_version": 2
+}
