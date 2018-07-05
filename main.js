@@ -2,6 +2,8 @@
 /* first shot */
 
 var running = false;
+var maxDay = 0;
+var maxEver = 0;
 
 function isEmpty(obj) {
   for(var prop in obj) {
@@ -36,17 +38,17 @@ function sendAlert(){
 
 function sendNotification(maximumValue, maximumType){
   Notification.requestPermission();
-  new Notification('Avatar Alarm', {
+  new Notification('Google Analytics RT Alarm', {
     icon: chrome.extension.getURL('alert.png'),
-    body: 'Your site is having heavy traffic increases the +'maximumType+' record has been broken. Check it now!'
+    body: 'Your site is having heavy traffic increases the'+maximumType+' record has been broken. Check it now!'
   });
 }
 var historyData = {startDate: getToday(), content: []}
 
 
 //https://stackoverflow.com/a/50493861/438110 MutationObserver usage
-function createListener(){
-  var targetNode = document.getElementById('galaxyIframe').contentWindow.document.getElementById('ID-overviewCounterValue');
+function createListener(targetNode){
+
 
   var config = { attributes: true, childList: true };
 
@@ -54,7 +56,6 @@ function createListener(){
     for(var mutation of mutationsList) {
       if (mutation.type == 'childList') {
         var currentValue = targetNode.innerText;
-        console.log(currentValue);
         chrome.storage.local.get({'date': getToday(), content: []}, function(result) {
           if (!chrome.runtime.error) {
             console.log('Maximums retrieved', result.content);
@@ -63,7 +64,9 @@ function createListener(){
               result.content[result.content.length-1].maxDay  < currentValue ? dailyData.maxDay = currentValue : dailyData.maxDay = result.content[result.content.length-1].maxDay;
               result.content[result.content.length-1].maxEver  < currentValue ? dailyData.maxEver = currentValue : dailyData.maxEver = result.content[result.content.length-1].maxEver;
               if (dailyData.date !== result.content[result.content.length -1].date){
+                dailyData.maxDay = '0'; //Initialize daily maximums
                 result.content.push(dailyData);
+                maxDay = dailyData.maxDay;
               }else{
                 result.content[result.content.length-1] = dailyData;
               }
@@ -88,11 +91,27 @@ function createListener(){
 
 
 console.log("Google RT Alert UP & RUNNING");
-setTimeout(function(){
+setInterval(function(){
   //TODO Manage notifications
-  console.log(getToday());
+
   if (!running){
-    running = createListener();
-    console.log(running);
+    var targetNode = document.getElementById('galaxyIframe').contentWindow.document.getElementById('ID-overviewCounterValue');
+    console.log(getToday());
+    running = createListener(targetNode);
+    console.log("Listener is running ",running);
+  }else{
+    chrome.storage.local.get({'date': getToday(), content: []}, function(result) {
+      //Send notifications
+      if (getToday() === result.content[result.content.length -1].date){ //Just in the same date to avoid overlapping values
+        if (maxDay < parseInt(result.content[result.content.length-1].maxDay)){
+          sendNotification(result.content[result.content.length-1].maxDay, 'daily');
+          maxDay = parseInt(result.content[result.content.length-1].maxDay);
+        }
+        if (maxEver < parseInt(result.content[result.content.length-1].maxEver)){
+          sendNotification(result.content[result.content.length-1].maxEver, 'all time');
+          maxEver = parseInt(result.content[result.content.length-1].maxEver);
+        }
+      }
+    });
   }
 }, 10000);
