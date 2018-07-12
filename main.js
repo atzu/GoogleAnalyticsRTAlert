@@ -40,7 +40,7 @@ function sendNotification(maximumValue, maximumType){
   Notification.requestPermission();
   new Notification('Google Analytics RT Alarm', {
     icon: chrome.extension.getURL('alert.png'),
-    body: 'Your site is having heavy traffic increases the'+maximumType+' record has been broken. Check it now!'
+    body: 'Users right now: '+maximumValue
   });
 }
 var historyData = {startDate: getToday(), content: []}
@@ -61,10 +61,10 @@ function createListener(targetNode){
             console.log('Maximums retrieved', result.content);
             var dailyData = {'date': getToday(), 'maxDay': '0', 'maxEver':'0'};
             if (result.content !== null && result.content!== undefined && !isEmpty(result.content)){
-              result.content[result.content.length-1].maxDay  < currentValue ? dailyData.maxDay = currentValue : dailyData.maxDay = result.content[result.content.length-1].maxDay;
-              result.content[result.content.length-1].maxEver  < currentValue ? dailyData.maxEver = currentValue : dailyData.maxEver = result.content[result.content.length-1].maxEver;
+              parseInt(result.content[result.content.length-1].maxDay)  < parseInt(currentValue) ? dailyData.maxDay = parseInt(currentValue) : dailyData.maxDay = parseInt(result.content[result.content.length-1].maxDay);
+              parseInt(result.content[result.content.length-1].maxEver)  < parseInt(currentValue) ? dailyData.maxEver = parseInt(currentValue) : dailyData.maxEver = parseInt(result.content[result.content.length-1].maxEver);
               if (dailyData.date !== result.content[result.content.length -1].date){
-                dailyData.maxDay = '0'; //Initialize daily maximums
+                dailyData.maxDay = parseInt('0'); //Initialize daily maximums
                 result.content.push(dailyData);
                 maxDay = dailyData.maxDay;
               }else{
@@ -98,16 +98,16 @@ setInterval(function(){
     var targetNode = document.getElementById('galaxyIframe').contentWindow.document.getElementById('ID-overviewCounterValue');
     console.log(getToday());
     running = createListener(targetNode);
-    console.log("Listener is running ",running);
+    console.log("Listener is running wild ",running);
   }else{
     chrome.storage.local.get({'date': getToday(), content: []}, function(result) {
       //Send notifications
       if (getToday() === result.content[result.content.length -1].date){ //Just in the same date to avoid overlapping values
-        if (maxDay < parseInt(result.content[result.content.length-1].maxDay)){
+        if (parseInt(maxDay) < parseInt(result.content[result.content.length-1].maxDay)){
           sendNotification(result.content[result.content.length-1].maxDay, 'daily');
           maxDay = parseInt(result.content[result.content.length-1].maxDay);
         }
-        if (maxEver < parseInt(result.content[result.content.length-1].maxEver)){
+        if (parseInt(maxEver) < parseInt(result.content[result.content.length-1].maxEver)){
           sendNotification(result.content[result.content.length-1].maxEver, 'all time');
           maxEver = parseInt(result.content[result.content.length-1].maxEver);
         }
